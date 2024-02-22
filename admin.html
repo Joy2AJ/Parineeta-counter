@@ -1,54 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parinita Admin</title>
-</head>
 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
 <style>
-    table {
+  table {
         border-collapse: collapse;
         width: 100%;
     }
-
-    th, td {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 8px;
-    }
-
-    th {
-        background-color: #f2f2f2;
-    }
 </style>
 <body>
-    <h2>Data Table</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>SL</th>
-                <th>NAME</th>
-                <th>PHONE</th>
-                <th>ADDRESS</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>1</td>
-                <td>John Doe</td>
-                <td>(123) 456-7890</td>
-                <td>123 Main St, Cityville</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Jane Smith</td>
-                <td>(987) 654-3210</td>
-                <td>456 Oak Ave, Townsville</td>
-            </tr>
-            <!-- Add more rows as needed -->
-        </tbody>
-    </table>
+  <div style="display: flex; justify-items: center; gap: 20px; place-items: center; ">
+    <h2>Total User <span class="totalData">0</span></h2>
+    <button
+      style="background: rgb(10, 8, 50); color:white; padding: 10px 20px; margin-top: 25px; border-radius: 5px ; cursor: pointer; margin-bottom: 20px;"
+      onclick="fetchforDownlode()">Download</button>
+  </div>
+  <!-- <button onclick="downloadCSV()">Download CSV</button> -->
+
+
 
 </body>
+<script>
+  function convertToCSV(data) {
+    // Convert array of objects to CSV string
+    const csvContent = data.map(row => Object.values(row).join(',')).join('\n');
+    return csvContent;
+  }
+
+  function createBlob(csvContent) {
+    // Create a Blob object
+    return new Blob([csvContent], { type: 'text/csv' });
+  }
+
+  function generateDownloadLink(blob, fileName) {
+    // Create a download link
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    return link;
+  }
+
+  function downloadCSV(data) {
+    const restItems = data.map(({ _id, ...others }) => ({ ...others }));
+    const csvContent = convertToCSV(restItems);
+    const blob = createBlob(csvContent);
+    const link = generateDownloadLink(blob, 'data.csv');
+
+    // Append the link to the body and click it programmatically
+    document.body.appendChild(link);
+    link.click();
+
+    // Remove the link from the body
+    document.body.removeChild(link);
+  }
+</script>
+
+<script>
+
+  const dataCount = () => {
+    const showNum = document.querySelector('.totalData');
+
+    const totalDataElement = document.getElementsByTagName('table')[0]; // Assuming there is only one table on the page
+
+    if (totalDataElement) {
+      const rowCount = totalDataElement.rows.length;
+      showNum.innerHTML = totalDataElement.rows.length - 1;
+
+      console.log('Number of rows in the table:', rowCount);
+    } else {
+      console.error('Table not found on the page.');
+    }
+
+  };
+
+
+  function createTable(data) {
+    const table = document.createElement('table');
+
+    table.border = '1';
+    const columnNames = ['name', 'address', 'phone',];
+    const columnNamesHead = ['name', 'address', 'phone', 'action'];
+    const headerRow = table.insertRow();
+
+    // Create table header
+    if (!data.length == 0) {
+
+      columnNamesHead?.forEach(columnName => {
+        const th = document.createElement('th');
+        th.textContent = columnName;
+        headerRow.appendChild(th);
+      });
+    }
+
+    // table data
+
+    data.forEach(item => {
+      const row = table.insertRow();
+
+      // Populate cells with corresponding data
+      columnNames.forEach(columnName => {
+        const cell = row.insertCell();
+        cell.textContent = item[columnName];
+      });
+
+
+
+      // Add delete button
+      const deleteCell = row.insertCell();
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.addEventListener("click", () => {
+
+        const confirmed = confirm('Are you sure you want to delete this data?');
+
+        if (!confirmed) {
+          alert('ok');
+          return;
+        }
+
+        fetch(`https://parineeta.vercel.app/user/${item._id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            // Add any other headers if needed
+          },
+        })
+          .then(response => {
+            console.log(response);
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Handle success (optional)
+            alert('Delete successful');
+            // Remove the corresponding row from the table
+            table.deleteRow(row.rowIndex);
+            dataCount();
+
+          })
+          .catch(error => {
+            // Handle errors (optional)
+            console.error('Error deleting user:', error);
+          });
+
+
+      });
+
+      deleteCell.appendChild(deleteButton);
+
+    });
+
+
+    // Append the table to the document
+    document.body.appendChild(table);
+
+    dataCount();
+
+  }
+
+
+  // data length
+
+
+
+
+  // Fetch data from the API
+  fetch('https://parineeta.vercel.app/users')
+    .then((res) => res.json())
+    .then((data) => {
+      createTable(data); // Call createTable function with API data
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
+    });
+
+
+
+
+  function fetchforDownlode() {
+    fetch('https://parineeta.vercel.app/users')
+      .then((res) => res.json())
+      .then((data) => {
+        downloadCSV(data);
+        console.log(data); // Optional: Log data to the console
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  }
+
+
+
+</script>
+
 </html>
