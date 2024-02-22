@@ -127,7 +127,56 @@
 	<!-- Timer counter start -->
 
 
+	<script>
 
+
+		function postData() {
+
+			// Get form data
+			const name = document.getElementById('name').value;
+			const phone = document.getElementById('phone').value;
+			const address = document.getElementById('Address').value;
+
+			if (!name || !phone || !address) {
+				alert('All field are required');
+				return;
+			}
+
+			const data = {
+				name: name,
+				phone: phone,
+				address: address
+			};
+
+
+
+			// Make a POST request to the API
+			fetch('https://parineeta.vercel.app/user', {
+				method: 'POST',
+				body: JSON.stringify(data),
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			})
+				.then(response => {
+					console.log(response, 'response');
+					if (!response.ok) {
+						throw new Error(HTTP error! Status: ${response.status});
+					}
+
+					// Parse the response as JSON
+					return response.json();
+				})
+				.then(data => {
+					// Handle the data returned by the API after the POST request
+					console.log(data);
+					alert('successfully submit your data');
+				})
+				.catch(error => {
+					alert('Fetch error:', error);
+				});
+		}
+	</script>
 	<script>
         $(document).ready(function (){
 			var myDate = new Date("Feb 28, 2024 15:37:25");
